@@ -22,6 +22,7 @@ frontend/dist/
 # Runtime data
 backend/uploads/
 backend/calculator/inventory.json
+*.xlsx
 
 # Environment & secrets
 .env
@@ -34,6 +35,7 @@ backend/calculator/inventory.json
 *.swp
 *.swo
 *~
+*.code-workspace
 
 # OS
 .DS_Store
