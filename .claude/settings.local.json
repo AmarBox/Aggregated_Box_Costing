@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(export NVM_DIR=\"$HOME/.nvm\")",
+      "Bash([ -s \"$NVM_DIR/nvm.sh\" ])",
+      "Bash(. \"$NVM_DIR/nvm.sh\")",
+      "Bash(npm run dev:*)",
+      "Bash(python -m pip install openpyxl -q)",
+      "Bash(python -c \"from calculator.batch_processor import process_workbook; from calculator.estimate_transfer import transfer; print\\(''All imports OK''\\)\")",
+      "Bash(python -c \"from app import app; print\\(''Routes:''\\); [print\\(f''  {r.rule} [{r.methods}]''\\) for r in app.url_map.iter_rules\\(\\) if r.rule.startswith\\(''/api''\\)]\")",
+      "Bash(python -c \":*)",
+      "Bash(cmd.exe /c \"node --version 2>&1\")",
+      "Bash(source venv/bin/activate)",
+      "Bash(python:*)"
+    ]
+  }
+}
