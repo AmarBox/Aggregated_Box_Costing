@@ -4,7 +4,6 @@ import {
   updateMaterialCosts,
   uploadFile,
   batchProcess,
-  batchTransfer,
   downloadUrl,
   fetchInventory,
   addInventoryReel,
@@ -460,9 +459,8 @@ function BatchSection() {
   const [rawWorkFile, setRawWorkFile] = useState(null);
   const [estimatesFile, setEstimatesFile] = useState(null);
   const [batchStatus, setBatchStatus] = useState('');
-  const [processResults, setProcessResults] = useState(null);
-  const [transferResults, setTransferResults] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [transferMode, setTransferMode] = useState('fresh');
 
   const rawRef = useRef();
   const estRef = useRef();
@@ -498,28 +496,11 @@ function BatchSection() {
   async function handleProcess() {
     setLoading(true);
     setBatchStatus('Processing...');
-    setProcessResults(null);
     try {
-      const res = await batchProcess();
-      setProcessResults(res);
-      setBatchStatus(`Processed ${res.rows_processed} rows.`);
+      const res = await batchProcess(transferMode);
+      setBatchStatus(`Processed ${res.rows_processed} rows, transferred ${res.transferred} to Estimates.`);
     } catch (e) {
       setBatchStatus('Process error: ' + e.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleTransfer() {
-    setLoading(true);
-    setBatchStatus('Transferring...');
-    setTransferResults(null);
-    try {
-      const res = await batchTransfer();
-      setTransferResults(res);
-      setBatchStatus(res.message);
-    } catch (e) {
-      setBatchStatus('Transfer error: ' + e.message);
     } finally {
       setLoading(false);
     }
@@ -529,8 +510,7 @@ function BatchSection() {
     <section className="admin-section">
       <h2>Batch Processing</h2>
       <p className="admin-hint">
-        Upload a Raw_Work.xlsx file, process it (costs are calculated using the order date),
-        then transfer to Estimates.xlsx.
+        Upload a Raw_Work.xlsx file, then process to calculate costs and generate the Estimates file for download.
       </p>
 
       <div className="upload-row">
@@ -547,7 +527,7 @@ function BatchSection() {
           </button>
         </div>
         <div className="upload-group">
-          <label>Estimates.xlsx (optional)</label>
+          <label>Estimates.xlsx (for Append mode)</label>
           <input
             ref={estRef}
             type="file"
@@ -560,82 +540,34 @@ function BatchSection() {
         </div>
       </div>
 
-      <div className="action-row">
-        <button className="btn btn-primary" onClick={handleProcess} disabled={loading}>
-          1. Process (Calculate Costs)
-        </button>
-        <button className="btn btn-primary" onClick={handleTransfer} disabled={loading}>
-          2. Transfer to Estimates
-        </button>
+      <div className="transfer-section">
+        <div className="transfer-controls">
+          <div className="segment-toggle">
+            <button
+              className={`segment-btn ${transferMode === 'fresh' ? 'active' : ''}`}
+              onClick={() => setTransferMode('fresh')}
+            >
+              Fresh
+            </button>
+            <button
+              className={`segment-btn ${transferMode === 'append' ? 'active' : ''}`}
+              onClick={() => setTransferMode('append')}
+            >
+              Append
+            </button>
+          </div>
+          <button className="btn btn-primary" onClick={handleProcess} disabled={loading}>
+            Process & Generate Estimates
+          </button>
+        </div>
+        <p className="transfer-hint">
+          {transferMode === 'fresh'
+            ? 'Creates a new Estimates file — previous data will not be included'
+            : 'Adds to the existing Estimates file — upload one above or uses the last generated file'}
+        </p>
       </div>
 
       {batchStatus && <p className="admin-msg">{batchStatus}</p>}
-
-      {processResults && processResults.results && (
-        <div className="results-section">
-          <h3>Process Results</h3>
-          <table className="results-table">
-            <thead>
-              <tr>
-                <th>Row</th>
-                <th>Name</th>
-                <th>Group</th>
-                <th>Date</th>
-                <th>Order Type</th>
-                <th>Item</th>
-                <th>Cost/Box</th>
-                <th>Margin</th>
-                <th>Rate</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {processResults.results.map((r) => (
-                <tr key={r.row}>
-                  <td>{r.row}</td>
-                  <td>{r.name}</td>
-                  <td>{r.group}</td>
-                  <td>{r.date}</td>
-                  <td>{r.order_type}</td>
-                  <td>{r.item_name || ''}</td>
-                  <td>{r.cost_per_box}</td>
-                  <td>{r.margin}</td>
-                  <td>{r.rate}</td>
-                  <td>{r.total}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {transferResults && transferResults.details && (
-        <div className="results-section">
-          <h3>Transfer Results</h3>
-          <table className="results-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Sr. No.</th>
-                <th>Program</th>
-                <th>Rate</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transferResults.details.map((d, i) => (
-                <tr key={i}>
-                  <td>{d.name}</td>
-                  <td>{d.sr_no}</td>
-                  <td>{d.program}</td>
-                  <td>{d.rate}</td>
-                  <td>{d.total}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
 
       <div className="download-row">
         <h3>Download Files</h3>

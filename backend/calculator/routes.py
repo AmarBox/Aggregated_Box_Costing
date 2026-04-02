@@ -271,31 +271,26 @@ def upload_estimates():
 
 @api_bp.route("/batch/process", methods=["POST"])
 def batch_process():
-    """Process the uploaded Raw_Work.xlsx — calculate costs and write Rate + Total."""
-    raw_path = _upload_path(RAW_WORK_FILE)
-    if not os.path.exists(raw_path):
-        return jsonify({"error": "Raw_Work.xlsx not uploaded yet"}), 400
-    try:
-        results = process_workbook(raw_path)
-        return jsonify({"rows_processed": len(results), "results": results})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@api_bp.route("/batch/transfer", methods=["POST"])
-def batch_transfer():
-    """Transfer processed rows from Raw_Work.xlsx to Estimates.xlsx."""
+    """Process the uploaded Raw_Work.xlsx and transfer to Estimates.xlsx."""
     raw_path = _upload_path(RAW_WORK_FILE)
     est_path = _upload_path(ESTIMATES_FILE)
     if not os.path.exists(raw_path):
         return jsonify({"error": "Raw_Work.xlsx not uploaded yet"}), 400
-    if not os.path.exists(est_path):
-        # Create a blank Estimates workbook if none uploaded
-        import openpyxl
-        wb = openpyxl.Workbook()
-        wb.save(est_path)
+
+    data = request.get_json(silent=True) or {}
+    mode = data.get("mode", "fresh")
+
     try:
+        results = process_workbook(raw_path)
+
+        if mode == "fresh" or not os.path.exists(est_path):
+            import openpyxl
+            wb = openpyxl.Workbook()
+            wb.save(est_path)
+
         summary = transfer(raw_path, est_path)
+        summary["rows_processed"] = len(results)
+        summary["mode"] = mode
         return jsonify(summary)
     except Exception as e:
         return jsonify({"error": str(e)}), 500

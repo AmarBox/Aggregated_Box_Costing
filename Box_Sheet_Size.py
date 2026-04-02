@@ -81,20 +81,20 @@ if __name__ == "__main__":
     length = 15
     width = 10
     height = 5
-    boxtype = BoxType.Universal
+    # boxtype = BoxType.Universal
     units = inch
 
     # Convert dimensions to inches
     length, width, height = convert_to_inches(length, width, height, units)
     
-    sheet_size = calculate_sheet_size(length, width, height, boxtype, units)
+    # sheet_size = calculate_sheet_size(length, width, height, boxtype, units)
 
-    print(f"Sheet size required for the box: {sheet_size[0]} x {sheet_size[1]}")
+    # print(f"Sheet size required for the box: {sheet_size[0]} x {sheet_size[1]}")
 
-    # # Calculate and display the sheet size
-    # for boxtype in BoxType:
-    #     sheet_size = calculate_sheet_size(length, width, height, boxtype, units)
-    #     print({boxtype})
-    #     if boxtype == BoxType.Bottom_Locking:
-    #         print("2 Up Locking Sheet Size = ", math.ceil((2 * sheet_size[0] - (width/2 - 1 * inch)).magnitude), "x", math.ceil(((2 * sheet_size[1]) - (length + width)).magnitude), "inches")
-    #     print(f"Sheet size required for the box: {sheet_size[0]} x {sheet_size[1]}")
+    # Calculate and display the sheet size
+    for boxtype in BoxType:
+        sheet_size = calculate_sheet_size(length, width, height, boxtype, units)
+        print({boxtype})
+        if boxtype == BoxType.Bottom_Locking:
+            print("2 Up Locking Sheet Size = ", math.ceil((2 * sheet_size[0] - (width/2 - 1 * inch)).magnitude), "x", math.ceil(((2 * sheet_size[1]) - (length + width)).magnitude), "inches")
+        print(f"Sheet size required for the box: {sheet_size[0]} x {sheet_size[1]}")

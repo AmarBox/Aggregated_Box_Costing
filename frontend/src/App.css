@@ -486,6 +486,54 @@ body {
   flex-wrap: wrap;
 }
 
+/* Transfer section with segmented toggle */
+.transfer-section {
+  margin-bottom: 16px;
+}
+
+.transfer-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.segment-toggle {
+  display: inline-flex;
+  background: #e0e0e0;
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.segment-btn {
+  padding: 7px 18px;
+  border: none;
+  background: transparent;
+  color: #555;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.segment-btn.active {
+  background: #fff;
+  color: #0f3460;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.segment-btn:not(.active):hover {
+  color: #333;
+}
+
+.transfer-hint {
+  font-size: 0.78rem;
+  color: #888;
+  margin-top: 6px;
+  margin-left: 2px;
+  transition: color 0.2s;
+}
+
 .download-row {
   margin-top: 24px;
   display: flex;

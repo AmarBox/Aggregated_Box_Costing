@@ -58,17 +58,14 @@ export async function uploadFile(endpoint, file) {
   return data;
 }
 
-export async function batchProcess() {
-  const res = await fetch(`${BASE}/batch/process`, { method: 'POST' });
+export async function batchProcess(mode = 'fresh') {
+  const res = await fetch(`${BASE}/batch/process`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode }),
+  });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Processing failed');
-  return data;
-}
-
-export async function batchTransfer() {
-  const res = await fetch(`${BASE}/batch/transfer`, { method: 'POST' });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Transfer failed');
   return data;
 }
 

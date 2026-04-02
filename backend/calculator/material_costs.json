@@ -1,41 +1,41 @@
 {
   "2026-03": {
     "KRAFT": 37,
-    "DUPLEX": 49,
-    "GOLDEN": 40,
+    "DUPLEX": 50,
+    "GOLDEN": 41,
     "GOLDEN180": 44.5,
     "ITC": 70,
     "PREPRINTED": 0
   },
   "2026-02": {
-    "KRAFT": 35.5,
-    "DUPLEX": 45,
-    "GOLDEN": 37.5,
-    "GOLDEN180": 44.5,
+    "KRAFT": 36,
+    "DUPLEX": 47,
+    "GOLDEN": 38,
+    "GOLDEN180": 42.5,
     "ITC": 70,
     "PREPRINTED": 0
   },
   "2025-12": {
-    "KRAFT": 34.0,
-    "DUPLEX": 43.0,
-    "GOLDEN": 36.0,
-    "GOLDEN180": 44.5,
+    "KRAFT": 35.0,
+    "DUPLEX": 46.0,
+    "GOLDEN": 37.0,
+    "GOLDEN180": 39.5,
     "ITC": 70,
     "PREPRINTED": 0
   },
   "2025-11": {
-    "KRAFT": 34.0,
-    "DUPLEX": 43.0,
-    "GOLDEN": 36.0,
-    "GOLDEN180": 44.5,
+    "KRAFT": 35.0,
+    "DUPLEX": 46.0,
+    "GOLDEN": 38.0,
+    "GOLDEN180": 39.5,
     "ITC": 70,
     "PREPRINTED": 0
   },
   "2025-10": {
     "KRAFT": 34.0,
-    "DUPLEX": 43.0,
-    "GOLDEN": 36.0,
-    "GOLDEN180": 44.5,
+    "DUPLEX": 45.0,
+    "GOLDEN": 37.0,
+    "GOLDEN180": 39.5,
     "ITC": 70,
     "PREPRINTED": 0
   },
@@ -43,55 +43,55 @@
     "KRAFT": 34.0,
     "DUPLEX": 43.0,
     "GOLDEN": 36.0,
-    "GOLDEN180": 44.5,
+    "GOLDEN180": 39.5,
     "ITC": 70,
     "PREPRINTED": 0
   },
   "2025-08": {
     "KRAFT": 34.0,
-    "DUPLEX": 43.0,
-    "GOLDEN": 36.0,
-    "GOLDEN180": 44.5,
+    "DUPLEX": 47.0,
+    "GOLDEN": 37.0,
+    "GOLDEN180": 39,
     "ITC": 70,
     "PREPRINTED": 0
   },
   "2025-07": {
-    "KRAFT": 34.0,
-    "DUPLEX": 43.0,
-    "GOLDEN": 36.0,
-    "GOLDEN180": 44.5,
+    "KRAFT": 35.0,
+    "DUPLEX": 47.0,
+    "GOLDEN": 37.0,
+    "GOLDEN180": 39.5,
     "ITC": 70,
     "PREPRINTED": 0
   },
   "2025-06": {
-    "KRAFT": 34.0,
-    "DUPLEX": 43.0,
-    "GOLDEN": 36.0,
-    "GOLDEN180": 44.5,
+    "KRAFT": 35.0,
+    "DUPLEX": 47.0,
+    "GOLDEN": 37.0,
+    "GOLDEN180": 42,
     "ITC": 70,
     "PREPRINTED": 0
   },
   "2025-05": {
-    "KRAFT": 34,
-    "DUPLEX": 41,
-    "GOLDEN": 36,
-    "GOLDEN180": 44.5,
+    "KRAFT": 35.0,
+    "DUPLEX": 47.0,
+    "GOLDEN": 37.0,
+    "GOLDEN180": 42,
     "ITC": 70,
     "PREPRINTED": 0
   },
   "2025-04": {
-    "KRAFT": 34.0,
-    "DUPLEX": 43.0,
-    "GOLDEN": 36.0,
-    "GOLDEN180": 44.5,
+     "KRAFT": 35.0,
+    "DUPLEX": 47.0,
+    "GOLDEN": 37.0,
+    "GOLDEN180": 42,
     "ITC": 70,
     "PREPRINTED": 0
   },
   "2025-03": {
-    "KRAFT": 34.0,
-    "DUPLEX": 43.0,
-    "GOLDEN": 36.0,
-    "GOLDEN180": 44.5,
+    "KRAFT": 35.0,
+    "DUPLEX": 47.0,
+    "GOLDEN": 37.0,
+    "GOLDEN180": 42,
     "ITC": 70,
     "PREPRINTED": 0
   }

@@ -8,6 +8,8 @@ Usage (CLI):  python -m calculator.estimate_transfer Raw_Work.xlsx Estimates.xls
 Usage (API):  transfer(raw_work_path, estimates_path) -> summary dict
 """
 
+from datetime import datetime
+
 import openpyxl
 from openpyxl.utils import get_column_letter
 
@@ -173,8 +175,21 @@ def transfer(raw_work_path, estimates_path):
                                  order_type=order_type, item_name=item_name)
 
         new_row = est_ws.max_row + 1
+        # Strip time component from date, keep only the date part
+        if isinstance(date_val, datetime):
+            date_val = date_val.date()
+        elif isinstance(date_val, str):
+            for fmt in ('%d/%m/%Y', '%Y-%m-%d', '%m/%d/%Y'):
+                try:
+                    date_val = datetime.strptime(date_val, fmt).date()
+                    break
+                except ValueError:
+                    pass
+
         est_ws.cell(row=new_row, column=EST_SR_NO).value     = next_sr
-        est_ws.cell(row=new_row, column=EST_DATE).value      = date_val
+        date_cell = est_ws.cell(row=new_row, column=EST_DATE)
+        date_cell.value = date_val
+        date_cell.number_format = 'DD/MM/YYYY'
         est_ws.cell(row=new_row, column=EST_PROGRAM).value   = program
         est_ws.cell(row=new_row, column=EST_PLY).value       = ply
         est_ws.cell(row=new_row, column=EST_RATE).value      = rate
