@@ -213,7 +213,7 @@ paper_quality = [PaperQuality_Adjusted.Kraft, PaperQuality_Adjusted.Kraft, Paper
 
 ply_num = 3
 box_per_sheet = 1 # Number of boxes that can be made from one sheet
-number_of_boxes = 1000
+number_of_boxes = 2000
 number_of_sheets = number_of_boxes/box_per_sheet
 
 is_nf = True # True if NF, False if not
@@ -224,10 +224,11 @@ is_punching = True # True if punching, False if not
 is_scoring = False # True if scoring, False if not
 
 is_laminated = False # True if laminated, False if not
+
 is_printed = False # True if printed, False if not
 
 is_hand_pasted = False # True if hand pasted, False if not
-pins_per_box = 5 # Number of pins per box
+pins_per_box = 6 # Number of pins per box
 
 only_corrugation = False # True if only liner, False if not
 first_time = False # True if first time, False if not

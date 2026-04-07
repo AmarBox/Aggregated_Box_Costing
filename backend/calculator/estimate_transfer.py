@@ -8,7 +8,7 @@ Usage (CLI):  python -m calculator.estimate_transfer Raw_Work.xlsx Estimates.xls
 Usage (API):  transfer(raw_work_path, estimates_path) -> summary dict
 """
 
-from datetime import datetime
+from datetime import date, datetime
 
 import openpyxl
 from openpyxl.utils import get_column_letter
@@ -38,13 +38,15 @@ RW_TOTAL      = 20
 # Estimates column indices (1-based)
 EST_SR_NO     = 1
 EST_DATE      = 2
-EST_PROGRAM   = 3
-EST_PLY       = 4
-EST_RATE      = 5
-EST_NUM_BOXES = 6
-EST_TOTAL     = 7
+EST_NAME      = 3
+EST_SIZE      = 4
+EST_PROGRAM   = 5
+EST_PLY       = 6
+EST_RATE      = 7
+EST_NUM_BOXES = 8
+EST_TOTAL     = 9
 
-HEADERS = ['Sr. No.', 'Date', 'Program', 'Ply', 'Rate', 'Number of Boxes', 'Total']
+HEADERS = ['Sr. No.', 'Date', 'Name', 'Size', 'Program', 'Ply', 'Rate', 'Number of Boxes', 'Total']
 
 
 def _format_num(n):
@@ -54,15 +56,11 @@ def _format_num(n):
     return str(float(n))
 
 
-def _build_program(length, width, bottom_w, bottom_q, flute_w, flute_q,
-                   top_w, top_q, punching, pins, order_type=None, item_name=None):
+def _build_program(bottom_w, bottom_q, flute_w, flute_q,
+                   top_w, top_q, ups, punching, pins, order_type=None):
     """Build a human-readable program description string."""
-    parts = []
-    if item_name:
-        parts.append(str(item_name).strip())
-    parts.append(f"{_format_num(length)}x{_format_num(width)} = "
-                 f"{bottom_w}({bottom_q}) + {flute_w}({flute_q}) + {top_w}({top_q})")
-    prog = " | ".join(parts)
+    prog = f"{bottom_w}({bottom_q}) + {flute_w}({flute_q}) + {top_w}({top_q})"
+    prog += f" ; Ups = {int(ups)}"
     if order_type and str(order_type).strip().upper() != 'ALL':
         prog += f" ; {order_type}"
     if str(punching).strip().upper() == 'Y':
@@ -70,6 +68,26 @@ def _build_program(length, width, bottom_w, bottom_q, flute_w, flute_q,
     if pins and int(pins) > 0:
         prog += f" ; Pins = {int(pins)}"
     return prog
+
+
+def _build_size(length, width):
+    """Build a size string like '20x27'."""
+    return f"{_format_num(length)}x{_format_num(width)}"
+
+
+def _normalize_date(date_val):
+    """Convert a date cell value to a date object for sorting."""
+    if isinstance(date_val, datetime):
+        return date_val.date()
+    if isinstance(date_val, date):
+        return date_val
+    if isinstance(date_val, str):
+        for fmt in ('%d/%m/%Y', '%Y-%m-%d', '%m/%d/%Y'):
+            try:
+                return datetime.strptime(date_val, fmt).date()
+            except ValueError:
+                pass
+    return date.min
 
 
 def _get_or_create_sheet(wb, name):
@@ -82,24 +100,69 @@ def _get_or_create_sheet(wb, name):
     return ws, True
 
 
-def _find_last_sr_no(ws):
-    """Find the highest Sr. No. in the sheet."""
-    last = 0
+def _read_existing_rows(ws):
+    """Read all data rows from a sheet into a list of tuples (date, row_data_dict).
+
+    Skips the header row and any Grand Total row.
+    """
+    rows = []
     for row in range(2, ws.max_row + 1):
-        val = ws.cell(row=row, column=EST_SR_NO).value
-        if isinstance(val, (int, float)):
-            last = max(last, int(val))
-    return last
+        date_val = ws.cell(row=row, column=EST_DATE).value
+        # Skip Grand Total rows
+        total_check = ws.cell(row=row, column=EST_NUM_BOXES).value
+        if isinstance(total_check, str) and 'Grand Total' in total_check:
+            continue
+        # Skip empty rows
+        if date_val is None and ws.cell(row=row, column=EST_PROGRAM).value is None:
+            continue
+        row_data = {
+            'date': date_val,
+            'name': ws.cell(row=row, column=EST_NAME).value,
+            'size': ws.cell(row=row, column=EST_SIZE).value,
+            'program': ws.cell(row=row, column=EST_PROGRAM).value,
+            'ply': ws.cell(row=row, column=EST_PLY).value,
+            'rate': ws.cell(row=row, column=EST_RATE).value,
+            'num_boxes': ws.cell(row=row, column=EST_NUM_BOXES).value,
+            'total': ws.cell(row=row, column=EST_TOTAL).value,
+        }
+        rows.append((_normalize_date(date_val), row_data))
+    return rows
 
 
-def _remove_grand_total_row(ws):
-    """Remove the Grand Total row if it exists."""
-    for row in range(ws.max_row, 1, -1):
-        for col in range(1, EST_TOTAL + 1):
-            val = ws.cell(row=row, column=col).value
-            if isinstance(val, str) and 'Grand Total' in val:
-                ws.delete_rows(row)
-                return
+def _merge_sorted(existing, new_rows):
+    """Merge two sorted lists of (date, row_data) into one sorted list."""
+    merged = []
+    i = j = 0
+    while i < len(existing) and j < len(new_rows):
+        if existing[i][0] <= new_rows[j][0]:
+            merged.append(existing[i])
+            i += 1
+        else:
+            merged.append(new_rows[j])
+            j += 1
+    merged.extend(existing[i:])
+    merged.extend(new_rows[j:])
+    return merged
+
+
+def _write_rows(ws, merged_rows):
+    """Clear data rows and rewrite from merged list with sequential Sr. No."""
+    # Clear existing data rows (keep header)
+    if ws.max_row > 1:
+        ws.delete_rows(2, ws.max_row - 1)
+    for idx, (_, row_data) in enumerate(merged_rows, 1):
+        r = idx + 1  # row 2 onwards
+        ws.cell(row=r, column=EST_SR_NO).value = idx
+        date_cell = ws.cell(row=r, column=EST_DATE)
+        date_cell.value = row_data['date']
+        date_cell.number_format = 'DD/MM/YYYY'
+        ws.cell(row=r, column=EST_NAME).value = row_data['name']
+        ws.cell(row=r, column=EST_SIZE).value = row_data['size']
+        ws.cell(row=r, column=EST_PROGRAM).value = row_data['program']
+        ws.cell(row=r, column=EST_PLY).value = row_data['ply']
+        ws.cell(row=r, column=EST_RATE).value = row_data['rate']
+        ws.cell(row=r, column=EST_NUM_BOXES).value = row_data['num_boxes']
+        ws.cell(row=r, column=EST_TOTAL).value = row_data['total']
 
 
 def _add_grand_total(ws):
@@ -140,7 +203,8 @@ def transfer(raw_work_path, estimates_path):
     if not rows_to_process:
         return {'transferred': 0, 'details': [], 'message': 'No rows to transfer (run process first).'}
 
-    modified_sheets = set()
+    # Collect new rows grouped by customer name
+    new_rows_by_customer = {}
     details = []
 
     for row_num in rows_to_process:
@@ -155,7 +219,8 @@ def transfer(raw_work_path, estimates_path):
         top_w      = int(rw_ws.cell(row=row_num, column=RW_TOP_W).value)
         top_q      = str(rw_ws.cell(row=row_num, column=RW_TOP_Q).value).strip()
         ply        = int(rw_ws.cell(row=row_num, column=RW_PLY).value)
-        order_type     = rw_ws.cell(row=row_num, column=RW_ORDER_TYPE).value
+        order_type = rw_ws.cell(row=row_num, column=RW_ORDER_TYPE).value
+        ups        = int(rw_ws.cell(row=row_num, column=RW_UPS).value)
         punching   = rw_ws.cell(row=row_num, column=RW_PUNCHING).value
         pins       = rw_ws.cell(row=row_num, column=RW_PINS).value or 0
         item_name  = rw_ws.cell(row=row_num, column=RW_ITEM_NAME).value
@@ -163,50 +228,41 @@ def transfer(raw_work_path, estimates_path):
         num_boxes  = int(rw_ws.cell(row=row_num, column=RW_NUM_BOXES).value)
         total      = rw_ws.cell(row=row_num, column=RW_TOTAL).value
 
-        est_ws, _ = _get_or_create_sheet(est_wb, name)
+        date_val = _normalize_date(date_val)
+        program = _build_program(bottom_w, bottom_q,
+                                 flute_w, flute_q, top_w, top_q, ups, punching, pins,
+                                 order_type=order_type)
+        size = _build_size(length, width)
 
-        if name not in modified_sheets:
-            _remove_grand_total_row(est_ws)
-        modified_sheets.add(name)
+        row_data = {
+            'date': date_val,
+            'name': str(item_name).strip() if item_name else '',
+            'size': size,
+            'program': program,
+            'ply': ply,
+            'rate': rate,
+            'num_boxes': num_boxes,
+            'total': total,
+        }
 
-        next_sr = _find_last_sr_no(est_ws) + 1
-        program = _build_program(length, width, bottom_w, bottom_q,
-                                 flute_w, flute_q, top_w, top_q, punching, pins,
-                                 order_type=order_type, item_name=item_name)
-
-        new_row = est_ws.max_row + 1
-        # Strip time component from date, keep only the date part
-        if isinstance(date_val, datetime):
-            date_val = date_val.date()
-        elif isinstance(date_val, str):
-            for fmt in ('%d/%m/%Y', '%Y-%m-%d', '%m/%d/%Y'):
-                try:
-                    date_val = datetime.strptime(date_val, fmt).date()
-                    break
-                except ValueError:
-                    pass
-
-        est_ws.cell(row=new_row, column=EST_SR_NO).value     = next_sr
-        date_cell = est_ws.cell(row=new_row, column=EST_DATE)
-        date_cell.value = date_val
-        date_cell.number_format = 'DD/MM/YYYY'
-        est_ws.cell(row=new_row, column=EST_PROGRAM).value   = program
-        est_ws.cell(row=new_row, column=EST_PLY).value       = ply
-        est_ws.cell(row=new_row, column=EST_RATE).value      = rate
-        est_ws.cell(row=new_row, column=EST_NUM_BOXES).value = num_boxes
-        est_ws.cell(row=new_row, column=EST_TOTAL).value     = total
+        new_rows_by_customer.setdefault(name, []).append((date_val, row_data))
 
         details.append({
             'row': row_num,
             'name': name,
-            'sr_no': next_sr,
             'program': program,
             'rate': rate,
             'total': total,
         })
 
-    for sheet_name in modified_sheets:
-        _add_grand_total(est_wb[sheet_name])
+    # For each customer: sort new rows, merge with existing, rewrite sheet
+    for customer, new_rows in new_rows_by_customer.items():
+        est_ws, _ = _get_or_create_sheet(est_wb, customer)
+        existing = _read_existing_rows(est_ws)
+        new_rows.sort(key=lambda x: x[0])
+        merged = _merge_sorted(existing, new_rows)
+        _write_rows(est_ws, merged)
+        _add_grand_total(est_ws)
 
     # Clean up empty default sheet
     if 'Sheet1' in est_wb.sheetnames and len(est_wb.sheetnames) > 1:
