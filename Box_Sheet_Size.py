@@ -78,11 +78,11 @@ class BoxType(Enum):
 
 if __name__ == "__main__":
     # Input dimensions for the box
-    length = 15
-    width = 10
-    height = 5
+    length = 195
+    width = 195
+    height = 255
     # boxtype = BoxType.Universal
-    units = inch
+    units = mm
 
     # Convert dimensions to inches
     length, width, height = convert_to_inches(length, width, height, units)

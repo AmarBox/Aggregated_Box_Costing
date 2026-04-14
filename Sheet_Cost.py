@@ -118,8 +118,8 @@ def corrugation_cost_nf(sheet_weight, paper_quality):
 def pasting_cost (sheet_area, ply_num, is_pasting):
     if (not is_pasting):
         return 0
-    pasting_cost = (sheet_area * 1.5 * math.floor(ply_num/2) * INR/inch**2) / 1200
-    return max(pasting_cost, 0.4 * INR)
+    pasting_cost = (sheet_area * 1.7 * math.floor(ply_num/2) * INR/inch**2) / 1200
+    return max(pasting_cost, 0.5 * INR)
 
 def punching_cost (number_of_sheets, is_punching = True):
     if(not is_punching):
@@ -182,7 +182,7 @@ def bundling_cost (number_of_boxes):
 
 
 class PaperQuality_OG(Enum):
-    Kraft = 38 * INR / kg
+    Kraft = 37.5 * INR / kg
     Duplex = 50 * INR / kg
     Golden = 42 * INR / kg
     PrePrinted = 0 * INR / kg
@@ -204,19 +204,19 @@ class PaperQuality_Adjusted(Enum):
 
 ###Inputs###
 
-length = 30 # in inches
-width = 27 # in inches
+length = 31 # in inches
+width = 41.5 # in inches
 
-paper_weight = [100, 100, 100] # in g/m^2 [Bottom, Flute, Top]
-paper_quality = [PaperQuality_Adjusted.Kraft, PaperQuality_Adjusted.Kraft, PaperQuality_Adjusted.Kraft] #[Bottom, Flute, Top]
+paper_weight = [230, 100, 230] # in g/m^2 [Bottom, Flute, Top]
+paper_quality = [PaperQuality_Adjusted.Duplex, PaperQuality_Adjusted.Kraft, PaperQuality_Adjusted.Duplex] #[Bottom, Flute, Top]
 # paper_quality= [PaperQuality_OG.Golden, PaperQuality_OG.Kraft, PaperQuality_OG.Duplex] #[Bottom, Flute, Top]
 
 ply_num = 3
-box_per_sheet = 1 # Number of boxes that can be made from one sheet
-number_of_boxes = 2000
+box_per_sheet = 2 # Number of boxes that can be made from one sheet
+number_of_boxes = 1500
 number_of_sheets = number_of_boxes/box_per_sheet
 
-is_nf = True # True if NF, False if not
+is_nf = False # True if NF, False if not
 
 is_pasting = True # True if pasting, False if not
 
@@ -225,10 +225,10 @@ is_scoring = False # True if scoring, False if not
 
 is_laminated = False # True if laminated, False if not
 
-is_printed = False # True if printed, False if not
+is_printed = True # True if printed, False if not
 
 is_hand_pasted = False # True if hand pasted, False if not
-pins_per_box = 6 # Number of pins per box
+pins_per_box = 0 # Number of pins per box
 
 only_corrugation = False # True if only liner, False if not
 first_time = False # True if first time, False if not
