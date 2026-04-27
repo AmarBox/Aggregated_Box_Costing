@@ -28,6 +28,12 @@ backend/calculator/inventory.json
 .env
 .env.*
 *.local
+backend/calculator/_build_secrets.py
+
+# PyInstaller
+backend/build/
+backend/dist/
+backend/*.spec
 
 # IDE
 .vscode/

@@ -26,6 +26,7 @@ from .box_cost_calculator import (
     ManufacturingOptions,
 )
 from .material_costs import get_costs_for_date
+from . import remote_config
 
 # Column indices (1-based) matching Raw_Work.xlsx layout
 COL_NAME           = 1
@@ -54,13 +55,10 @@ NATURE_ALL         = 'ALL'
 NATURE_CORRUGATION = 'CORRUGATION'
 NATURE_LABOUR      = 'LABOUR'
 
-# Margin by customer group
-MARGIN_MAP = {
-    'A': 0.05,
-    'B': 0.10,
-    'C': 0.15,
-    'D': 0.20,
-}
+# Margin by customer group — sourced from remote config at call time.
+def _margin_for(group: str) -> float:
+    groups = remote_config.get()["margins"]["groups"]
+    return groups.get(group, groups.get("B", 0.10))
 
 # Map Excel quality strings to PaperQuality enum names
 QUALITY_MAP = {
@@ -115,10 +113,13 @@ def _date_to_str(date_val):
 def _add_template_validations(ws):
     """Attach dropdowns and data-type validations to every input column.
 
-    Applies to data rows 2..TEMPLATE_VALIDATION_LAST_ROW. Each rule shows a
-    Stop-style error so invalid entries are rejected by Excel.
+    Pulls bounds, dropdown options, and tier values from the remote config
+    so updates can ship without a rebuild.
     """
     last = TEMPLATE_VALIDATION_LAST_ROW
+    cfg = remote_config.get()
+    tv = cfg["template_validation"]
+    margin_groups = list(cfg["margins"]["groups"].keys())
 
     def _add(rule, col_idx):
         rule.showErrorMessage = True
@@ -128,116 +129,124 @@ def _add_template_validations(ws):
         rule.add(f'{col_letter}2:{col_letter}{last}')
         ws.add_data_validation(rule)
 
-    # Group: A/B/C/D
+    def _list_formula(values):
+        return '"' + ','.join(str(v) for v in values) + '"'
+
+    # Group
     _add(DataValidation(
-        type='list', formula1='"A,B,C,D"',
-        error='Group must be A, B, C, or D.',
-        promptTitle='Group', prompt='Customer group (A=5%, B=10%, C=15%, D=20% margin).',
+        type='list', formula1=_list_formula(margin_groups),
+        error=f"Group must be one of {', '.join(margin_groups)}.",
+        promptTitle='Group', prompt='Customer group (determines margin).',
     ), COL_GROUP)
 
-    # Date: must be a valid date
+    # Date
     _add(DataValidation(
         type='date', operator='greaterThanOrEqual', formula1='1900-01-01',
         error='Enter a valid date.',
         promptTitle='Date', prompt='Order date (used for material cost lookup).',
     ), COL_DATE)
 
-    # Length: 18-32 inches
+    # Length
     _add(DataValidation(
-        type='decimal', operator='between', formula1=18, formula2=32,
-        error='Length must be between 18 and 32 inches.',
-        promptTitle='Length', prompt='Sheet length in inches (18-32).',
+        type='decimal', operator='between',
+        formula1=tv['length_min'], formula2=tv['length_max'],
+        error=f"Length must be between {tv['length_min']} and {tv['length_max']} inches.",
+        promptTitle='Length',
+        prompt=f"Sheet length in inches ({tv['length_min']}-{tv['length_max']}).",
     ), COL_LENGTH)
 
-    # Width: positive decimal
+    # Width
     _add(DataValidation(
         type='decimal', operator='greaterThan', formula1=0,
         error='Width must be a positive number.',
         promptTitle='Width', prompt='Sheet width in inches (any positive value).',
     ), COL_WIDTH)
 
-    # Bottom weight: whole number > 0
+    # Bottom weight
     _add(DataValidation(
         type='whole', operator='greaterThan', formula1=0,
         error='Bottom weight (GSM) must be a whole number greater than 0.',
         promptTitle='Bottom (GSM)', prompt='Bottom paper weight in GSM (whole number > 0).',
     ), COL_BOTTOM_WEIGHT)
 
-    # Bottom quality: Kraft/Duplex/Golden (no Preprinted, no ITC)
+    # Bottom quality
     _add(DataValidation(
-        type='list', formula1='"Kraft,Duplex,Golden"',
-        error='Bottom Quality must be Kraft, Duplex, or Golden.',
+        type='list', formula1=_list_formula(tv['bottom_quality_options']),
+        error=f"Bottom Quality must be one of {', '.join(tv['bottom_quality_options'])}.",
         promptTitle='Bottom Quality', prompt='Bottom layer paper quality.',
     ), COL_BOTTOM_QUALITY)
 
-    # Flute weight: whole number > 0
+    # Flute weight
     _add(DataValidation(
         type='whole', operator='greaterThan', formula1=0,
         error='Flute weight (GSM) must be a whole number greater than 0.',
         promptTitle='Flute (GSM)', prompt='Flute paper weight in GSM (whole number > 0).',
     ), COL_FLUTE_WEIGHT)
 
-    # Flute quality: Kraft/Duplex/Golden
+    # Flute quality
     _add(DataValidation(
-        type='list', formula1='"Kraft,Duplex,Golden"',
-        error='Flute Quality must be Kraft, Duplex, or Golden.',
+        type='list', formula1=_list_formula(tv['flute_quality_options']),
+        error=f"Flute Quality must be one of {', '.join(tv['flute_quality_options'])}.",
         promptTitle='Flute Quality', prompt='Flute layer paper quality.',
     ), COL_FLUTE_QUALITY)
 
-    # Top weight: whole number >= 0 (0 valid for Preprinted)
+    # Top weight
     _add(DataValidation(
         type='whole', operator='greaterThanOrEqual', formula1=0,
         error='Top weight (GSM) must be a whole number (0 or greater).',
         promptTitle='Top (GSM)', prompt='Top paper weight in GSM (use 0 for Preprinted).',
     ), COL_TOP_WEIGHT)
 
-    # Top quality: all five
+    # Top quality
     _add(DataValidation(
-        type='list', formula1='"Kraft,Duplex,Golden,ITC,Preprinted"',
-        error='Top Quality must be Kraft, Duplex, Golden, ITC, or Preprinted.',
+        type='list', formula1=_list_formula(tv['top_quality_options']),
+        error=f"Top Quality must be one of {', '.join(tv['top_quality_options'])}.",
         promptTitle='Top Quality', prompt='Top layer paper quality.',
     ), COL_TOP_QUALITY)
 
-    # Ply: odd, max 9
+    # Ply
+    ply_options = tv['ply_options']
     _add(DataValidation(
-        type='list', formula1='"3,5,7,9"',
-        error='Ply must be 3, 5, 7, or 9.',
-        promptTitle='Ply', prompt='Ply count (odd, max 9).',
+        type='list', formula1=_list_formula(ply_options),
+        error=f"Ply must be one of {', '.join(str(p) for p in ply_options)}.",
+        promptTitle='Ply', prompt='Ply count (odd numbers).',
     ), COL_PLY)
 
-    # Order Type: All/Corrugation/Labour
+    # Order Type
     _add(DataValidation(
         type='list', formula1='"All,Corrugation,Labour"',
         error='Order Type must be All, Corrugation, or Labour.',
         promptTitle='Order Type', prompt='All = full cost; Corrugation = no paper; Labour = labour only.',
     ), COL_ORDER_TYPE)
 
-    # Ups: decimal > 0
+    # Ups
     _add(DataValidation(
         type='decimal', operator='greaterThan', formula1=0,
         error='Ups must be a positive number.',
         promptTitle='Ups', prompt='Boxes per sheet (positive, decimals allowed).',
     ), COL_UPS)
 
-    # Number of Boxes: whole number >= 100
+    # Number of Boxes
     _add(DataValidation(
-        type='whole', operator='greaterThanOrEqual', formula1=100,
-        error='Number of Boxes must be a whole number of at least 100.',
-        promptTitle='Number of Boxes', prompt='Total quantity (minimum 100).',
+        type='whole', operator='greaterThanOrEqual', formula1=tv['num_boxes_min'],
+        error=f"Number of Boxes must be a whole number of at least {tv['num_boxes_min']}.",
+        promptTitle='Number of Boxes', prompt=f"Total quantity (minimum {tv['num_boxes_min']}).",
     ), COL_NUM_BOXES)
 
-    # Punching: Y/N
+    # Punching
     _add(DataValidation(
         type='list', formula1='"Y,N"',
         error='Punching must be Y or N.',
         promptTitle='Punching', prompt='Y if the box requires punching, otherwise N.',
     ), COL_PUNCHING)
 
-    # Pins: whole number 0-20
+    # Pins
     _add(DataValidation(
-        type='whole', operator='between', formula1=0, formula2=20,
-        error='Pins must be a whole number between 0 and 20.',
-        promptTitle='Pins', prompt='Pins per box (0-20). Leave blank for 0.',
+        type='whole', operator='between',
+        formula1=tv['pins_min'], formula2=tv['pins_max'],
+        error=f"Pins must be a whole number between {tv['pins_min']} and {tv['pins_max']}.",
+        promptTitle='Pins',
+        prompt=f"Pins per box ({tv['pins_min']}-{tv['pins_max']}). Leave blank for 0.",
     ), COL_PINS)
 
 
@@ -362,10 +371,11 @@ def process_workbook(filepath):
 
         cost_per_box = result.manufacturing_cost_per_box
 
-        # Apply margin and round to nearest 0.25
-        margin = MARGIN_MAP.get(group, 0.10)
+        # Apply margin and round up to the configured increment
+        margin = _margin_for(group)
         rate = cost_per_box * (1 + margin)
-        rate_value = math.ceil(rate / 0.25) * 0.25
+        increment = remote_config.get()["margins"]["rate_rounding_increment"]
+        rate_value = math.ceil(rate / increment) * increment
         total_value = round(number_of_boxes * rate_value, 2)
 
         # Write back to Excel

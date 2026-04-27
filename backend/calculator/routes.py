@@ -9,43 +9,29 @@ from .box_cost_calculator import (
     ProductionDetails,
     ManufacturingOptions,
 )
-from .material_costs import get_all_monthly_costs, get_costs_for_date, upsert_monthly_costs
+from .material_costs import get_all_monthly_costs, get_costs_for_date
 from .batch_processor import process_workbook, generate_template
 from .estimate_transfer import transfer
 from .inventory import get_all_reels, add_reel, update_reel, delete_reel, get_inventory_summary
+from . import remote_config
 
 api_bp = Blueprint("api", __name__)
 calculator = BoxCostCalculator()
 
-# Paper quality → available weights mapping
-QUALITY_WEIGHTS = {
-    "KRAFT": [80, 100, 120, 140],
-    "GOLDEN": [120, 150, 180],
-    "DUPLEX": [200, 230, 285],
-    "ITC": [250, 300, 350, 400],
-    "PREPRINTED": [0],
-}
-
-# Qualities that allow manual GSM entry (user can type a custom value)
-CUSTOM_GSM_QUALITIES = ["DUPLEX", "ITC"]
-
-BOX_TYPES = [bt.value for bt in BoxType]
-UNIT_OPTIONS = ["cm", "m", "inch"]
-FLUTE_TYPES = ["EF", "NF"]
-ATTACHMENT_TYPES = ["none", "pinning", "hand_pasting"]
-
 
 @api_bp.route("/options", methods=["GET"])
 def get_options():
+    """Return UI option lists, all sourced from the remote config."""
+    options = remote_config.get()["options"]
     return jsonify(
         {
-            "paper_qualities": list(QUALITY_WEIGHTS.keys()),
-            "quality_weights": QUALITY_WEIGHTS,
-            "custom_gsm_qualities": CUSTOM_GSM_QUALITIES,
-            "box_types": BOX_TYPES,
-            "units": UNIT_OPTIONS,
-            "flute_types": FLUTE_TYPES,
-            "attachment_types": ATTACHMENT_TYPES,
+            "paper_qualities": options["paper_qualities"],
+            "quality_weights": options["quality_weights"],
+            "custom_gsm_qualities": options["custom_gsm_qualities"],
+            "box_types": options["box_types"],
+            "units": options["unit_options"],
+            "flute_types": options["flute_types"],
+            "attachment_types": options["attachment_types"],
         }
     )
 
@@ -154,16 +140,15 @@ def calculate_cost():
             cost_overrides=cost_overrides,
         )
 
-        # Build sales prices with tax rates
+        # Build sales prices using configured margin brackets (no tax — manufacturer app)
+        margin_brackets = remote_config.get()["margins"]["sales_margin_brackets"]
         sales_prices_list = []
         for i, price in enumerate(result.sales_prices):
-            margin_pct = (i + 1) * 5
+            margin = margin_brackets[i] if i < len(margin_brackets) else 0
             sales_prices_list.append(
                 {
-                    "margin_pct": margin_pct,
+                    "margin_pct": round(margin * 100),
                     "price": round(price, 2),
-                    "with_legacy_tax": round(price * 1.12, 2),
-                    "with_new_tax": round(price * 1.05, 2),
                 }
             )
 
@@ -207,28 +192,8 @@ def calculate_cost():
 
 @api_bp.route("/material-costs", methods=["GET"])
 def list_material_costs():
-    """Return all monthly material cost records."""
+    """Return all monthly material cost records (read-only, sourced from remote config)."""
     return jsonify(get_all_monthly_costs())
-
-
-@api_bp.route("/material-costs", methods=["POST"])
-def update_material_costs():
-    """Add or update material costs for a month.
-
-    Expected JSON body:
-    {
-        "month": "2026-03",
-        "costs": {"KRAFT": 35.5, "DUPLEX": 45, ...}
-    }
-    """
-    data = request.get_json()
-    try:
-        month = data["month"]
-        costs = data["costs"]
-        updated = upsert_monthly_costs(month, costs)
-        return jsonify({"month": month, "costs": updated})
-    except (KeyError, TypeError) as e:
-        return jsonify({"error": f"Invalid request: {e}"}), 400
 
 
 # ---------------------------------------------------------------------------

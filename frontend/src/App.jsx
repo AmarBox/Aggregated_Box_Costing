@@ -6,7 +6,7 @@ import BoxPropertiesStep from './components/steps/BoxPropertiesStep';
 import ProductionDetailsStep from './components/steps/ProductionDetailsStep';
 import ManufacturingOptionsStep from './components/steps/ManufacturingOptionsStep';
 import ResultsStep from './components/steps/ResultsStep';
-import AdminPage from './components/AdminPage';
+import BatchProcessingPage from './components/BatchProcessingPage';
 import { fetchOptions, calculateCost } from './api/calculatorApi';
 
 const INITIAL_FORM = {
@@ -40,7 +40,7 @@ const INITIAL_FORM = {
 };
 
 export default function App() {
-  const [page, setPage] = useState('calculator'); // 'calculator' | 'admin'
+  const [page, setPage] = useState('calculator'); // 'calculator' | 'batch'
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [options, setOptions] = useState({});
@@ -156,10 +156,10 @@ export default function App() {
             Calculator
           </button>
           <button
-            className={`nav-tab ${page === 'admin' ? 'active' : ''}`}
-            onClick={() => setPage('admin')}
+            className={`nav-tab ${page === 'batch' ? 'active' : ''}`}
+            onClick={() => setPage('batch')}
           >
-            Admin Console
+            Batch Processing
           </button>
         </nav>
       </header>
@@ -190,7 +190,7 @@ export default function App() {
         </>
       ) : (
         <main className="app-main">
-          <AdminPage />
+          <BatchProcessingPage />
         </main>
       )}
     </div>

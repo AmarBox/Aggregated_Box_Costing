@@ -4,6 +4,8 @@ import math
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
 
+from . import remote_config
+
 # Initialize unit registry
 ureg = UnitRegistry()
 ureg.define('INR = [currency]')
@@ -41,14 +43,15 @@ class PaperQuality(Enum):
         Args:
             quality_name: Name of the paper quality (e.g. "KRAFT")
             cost_overrides: Optional dict of {quality_name: cost_per_kg} from monthly costs
+
+        Resolution: cost_overrides → remote_config.material_costs.default → enum value.
         """
         if cost_overrides and quality_name in cost_overrides:
             return cost_overrides[quality_name] * INR / kg
+        defaults = remote_config.get().get("material_costs", {}).get("default", {})
+        if quality_name in defaults:
+            return defaults[quality_name] * INR / kg
         return cls[quality_name].value * INR / kg
-
-    @classmethod
-    def set_cost(cls, quality_name, new_cost):
-        cls._member_map_[quality_name]._value_ = new_cost
 
 
 
@@ -176,45 +179,31 @@ class BoxCostCalculator:
         return sheet_weight
     
     def calculate_printing_cost(self, sheet_size, number_of_boxes: int, is_printed: bool = False) -> float:
-        """Calculate printing cost."""
+        """Calculate printing cost using the configured tier table."""
         if not is_printed:
             return 0 * INR
-            
-        if number_of_boxes <= 1000:
-            return 1600 * INR / number_of_boxes
-        elif number_of_boxes <= 2000:
-            return 2000 * INR / number_of_boxes
-        elif number_of_boxes <= 3000:
-            return 2200 * INR / number_of_boxes
-        elif number_of_boxes <= 4000:
-            return 2800 * INR / number_of_boxes
-        elif number_of_boxes <= 5000:
-            return 3200 * INR / number_of_boxes
-        elif number_of_boxes <= 6000:
-            return 3600 * INR / number_of_boxes
-        elif number_of_boxes <= 7000:
-            return 4200 * INR / number_of_boxes
-        elif number_of_boxes <= 8000:
-            return 4800 * INR / number_of_boxes
-        elif number_of_boxes <= 9000:
-            return 5400 * INR / number_of_boxes
-        elif number_of_boxes <= 10000:
-            return 6000 * INR / number_of_boxes
-        else:
-            return 0.6 * INR
-    
+        for tier in remote_config.get()["printing_tiers"]:
+            cap = tier.get("max_boxes")
+            if cap is None or number_of_boxes <= cap:
+                if "total_cost" in tier:
+                    return tier["total_cost"] * INR / number_of_boxes
+                return tier["per_box_cost"] * INR
+        return 0 * INR
+
     def calculate_lamination_cost(self, sheet_area, is_laminated: bool = False) -> float:
         """Calculate lamination cost."""
-        lamination_multiplier = 0.4 * INR / m**2
         if not is_laminated:
             return 0 * INR
+        rate = remote_config.get()["processing_rates"]["lamination_per_m2"]
+        lamination_multiplier = rate * INR / m**2
         sheet_area_inches = sheet_area.to(inch**2)
-        return (sheet_area_inches/100) *  lamination_multiplier
-    
+        return (sheet_area_inches/100) * lamination_multiplier
+
     def calculate_corrugation_cost(self, sheet_weight: List[float], paper_quality: List[PaperQuality], cost_overrides=None) -> float:
         """Calculate corrugation cost."""
-        cost_corrugation = 8 * INR / kg
-        cost_pasting_sheet = 2 * INR / kg
+        rates = remote_config.get()["processing_rates"]
+        cost_corrugation = rates["corrugation_per_kg"] * INR / kg
+        cost_pasting_sheet = rates["pasting_sheet_per_kg"] * INR / kg
         cost_paper = 0 * INR
 
         for i in range(len(sheet_weight) - 1):
@@ -225,62 +214,59 @@ class BoxCostCalculator:
 
     def calculate_corrugation_cost_nf(self, sheet_weight: List[float], paper_quality: List[PaperQuality], cost_overrides=None) -> float:
         """Calculate NF corrugation cost."""
-        nf_corrugation_cost = 15 * INR / kg
+        rates = remote_config.get()["processing_rates"]
+        nf_corrugation_cost = rates["corrugation_nf_per_kg"] * INR / kg
         cost_paper = 0 * INR
 
         for i in range(len(sheet_weight) - 1):
-            # Ensure all operands are Pint Quantities with compatible units
             cost_paper += sheet_weight[i] * PaperQuality.get_cost(paper_quality[i].name, cost_overrides)
             cost_paper += sheet_weight[i] * nf_corrugation_cost
         cost_paper += sheet_weight[2] * PaperQuality.get_cost(paper_quality[2].name, cost_overrides)
         cost_paper += sheet_weight[2] * nf_corrugation_cost
         return cost_paper
-    
+
     def calculate_pasting_cost(self, sheet_area, ply_num: int) -> float:
         """Calculate pasting cost."""
-        pasting_cost = (sheet_area * 1.5 * ply_num/2 * INR/inch**2) / 1200
-        return max(pasting_cost, 0.4 * INR)
-    
+        rates = remote_config.get()["processing_rates"]
+        mult = rates["pasting_formula_multiplier"]
+        div = rates["pasting_formula_divisor"]
+        min_cost = rates["pasting_min_cost"]
+        pasting_cost = (sheet_area * mult * ply_num/2 * INR/inch**2) / div
+        return max(pasting_cost, min_cost * INR)
+
     def calculate_punching_cost(self, number_of_sheets: int, is_punching: bool = True) -> float:
-        """Calculate punching cost."""
+        """Calculate punching cost using the configured tier table."""
         if not is_punching:
             return 0 * INR
-            
-        if number_of_sheets < 500:
-            return (500/number_of_sheets) * INR
-        elif number_of_sheets < 1000:
-            return 0.5 * INR
-        elif number_of_sheets < 3000:
-            return 0.4 * INR
-        else:
-            return 0.3 * INR
-    
+        for tier in remote_config.get()["punching_tiers"]:
+            cap = tier.get("max_sheets")
+            if cap is None or number_of_sheets < cap:
+                if "formula" in tier:
+                    # Currently the only supported formula form: "K/sheets"
+                    numerator = float(tier["formula"].split("/")[0])
+                    return (numerator / number_of_sheets) * INR
+                return tier["rate"] * INR
+        return 0 * INR
+
     def calculate_pinning_cost(self, number_of_pins: int) -> float:
         """Calculate pinning cost."""
-        return number_of_pins * 0.1 * INR
-    
+        rate = remote_config.get()["processing_rates"]["pinning_per_pin"]
+        return number_of_pins * rate * INR
+
     def calculate_hand_pasting_cost(self, length: float, is_hand_pasted: bool = False) -> float:
-        """Calculate hand pasting cost."""
+        """Calculate hand pasting cost using the configured tier table."""
         if not is_hand_pasted:
             return 0 * INR
-            
-        if length <= 10:
-            return 0.3 * INR
-        elif length <= 20:
-            return 0.4 * INR
-        elif length <= 30:
-            return 1 * INR
-        else:
-            return 2 * INR
-    
+        for tier in remote_config.get()["hand_pasting_tiers"]:
+            cap = tier.get("max_length")
+            if cap is None or length <= cap:
+                return tier["rate"] * INR
+        return 0 * INR
+
     def calculate_sales_prices(self, cost: float) -> List[float]:
-        """Calculate sales prices with different profit margins."""
-        sales_prices = []
-        for i in range(6):
-            profit_margin = cost * 0.05 * (i + 1)
-            sale_price = cost + profit_margin
-            sales_prices.append(sale_price)
-        return sales_prices
+        """Calculate sales prices using configured margin brackets."""
+        brackets = remote_config.get()["margins"]["sales_margin_brackets"]
+        return [cost + cost * m for m in brackets]
     
     def calculate_total_cost(self,
                            sheet_length: float = None,
@@ -326,6 +312,10 @@ class BoxCostCalculator:
         # Calculate number of sheets
         number_of_sheets = production_details.number_of_boxes / production_details.box_per_sheet
         
+        rates = remote_config.get()["processing_rates"]
+        wastage_multiplier = rates["wastage_multiplier"]
+        scoring_rate = rates["scoring_cost"]
+
         # Handle labour-only case (no corrugation, no paper — only punching, pasting, pins, hand pasting, scoring)
         if manufacturing_options.labour_only:
             sheet_weight = self.calculate_sheet_weight(sheet_area, production_details.paper_weight, production_details.ply_num)
@@ -335,9 +325,9 @@ class BoxCostCalculator:
             punching_cost = self.calculate_punching_cost(number_of_sheets, manufacturing_options.is_punching)
             pinning_cost = self.calculate_pinning_cost(production_details.pins_per_box)
             hand_pasting_cost = self.calculate_hand_pasting_cost(sheet_length, manufacturing_options.is_hand_pasted)
-            scoring_cost = 1 * INR if manufacturing_options.is_scoring else 0 * INR
+            scoring_cost = scoring_rate * INR if manufacturing_options.is_scoring else 0 * INR
 
-            sheet_labour_cost = (pasting_cost + punching_cost + scoring_cost) * 1.02  # 2% wastage
+            sheet_labour_cost = (pasting_cost + punching_cost + scoring_cost) * wastage_multiplier
             manufacturing_cost_per_box = sheet_labour_cost / production_details.box_per_sheet + pinning_cost + hand_pasting_cost
 
             sales_prices = self.calculate_sales_prices(manufacturing_cost_per_box)
@@ -370,18 +360,18 @@ class BoxCostCalculator:
 
             # Use NF corrugation rate if is_nf, else standard rate
             if manufacturing_options.is_nf:
-                corrugation_rate = 15 * INR / kg
+                corrugation_rate = rates["corrugation_nf_per_kg"] * INR / kg
             else:
-                corrugation_rate = 8 * INR / kg
+                corrugation_rate = rates["corrugation_per_kg"] * INR / kg
             corrugation_cost = total_sheet_weight * corrugation_rate
 
             pasting_cost = self.calculate_pasting_cost(sheet_area, production_details.ply_num)
             punching_cost = self.calculate_punching_cost(number_of_sheets, manufacturing_options.is_punching)
             pinning_cost = self.calculate_pinning_cost(production_details.pins_per_box)
             hand_pasting_cost = self.calculate_hand_pasting_cost(sheet_length, manufacturing_options.is_hand_pasted)
-            scoring_cost = 1 * INR if manufacturing_options.is_scoring else 0 * INR
+            scoring_cost = scoring_rate * INR if manufacturing_options.is_scoring else 0 * INR
 
-            sheet_manufacturing_cost = (corrugation_cost + pasting_cost + punching_cost + scoring_cost) * 1.02  # 2% wastage
+            sheet_manufacturing_cost = (corrugation_cost + pasting_cost + punching_cost + scoring_cost) * wastage_multiplier
             manufacturing_cost_per_box = sheet_manufacturing_cost / production_details.box_per_sheet + pinning_cost + hand_pasting_cost
 
             sales_prices = self.calculate_sales_prices(manufacturing_cost_per_box)
@@ -413,7 +403,7 @@ class BoxCostCalculator:
         # Calculate cost components
         scoring_cost = 0 * INR
         if manufacturing_options.is_nf or (not manufacturing_options.is_punching and manufacturing_options.is_scoring):
-            scoring_cost = 1 * INR
+            scoring_cost = scoring_rate * INR
         
         if manufacturing_options.is_nf:
             corrugation_cost = self.calculate_corrugation_cost_nf(sheet_weight, production_details.paper_quality, cost_overrides)
@@ -432,8 +422,8 @@ class BoxCostCalculator:
         if not manufacturing_options.is_nf:
             sheet_manufacturing_cost += punching_cost + printing_cost + lamination_cost
         
-        # Add 2% wastage
-        sheet_manufacturing_cost = sheet_manufacturing_cost * 1.02
+        # Apply wastage multiplier (default 1.02 = 2% wastage)
+        sheet_manufacturing_cost = sheet_manufacturing_cost * wastage_multiplier
         
         # Calculate per box cost
         manufacturing_cost_per_box = (sheet_manufacturing_cost / production_details.box_per_sheet + 

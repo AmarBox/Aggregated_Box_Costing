@@ -28,25 +28,6 @@ export async function calculateCost(payload) {
   return data;
 }
 
-// --- Material costs ---
-
-export async function fetchMaterialCosts() {
-  const res = await fetch(`${BASE}/material-costs`);
-  if (!res.ok) throw new Error('Failed to fetch material costs');
-  return res.json();
-}
-
-export async function updateMaterialCosts(month, costs) {
-  const res = await fetch(`${BASE}/material-costs`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ month, costs }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Failed to update costs');
-  return data;
-}
-
 // --- Batch processing ---
 
 export async function uploadFile(endpoint, file) {
@@ -73,45 +54,3 @@ export function downloadUrl(filename) {
   return `${BASE}/download/${filename}`;
 }
 
-// --- Inventory ---
-
-export async function fetchInventory() {
-  const res = await fetch(`${BASE}/inventory`);
-  if (!res.ok) throw new Error('Failed to fetch inventory');
-  return res.json();
-}
-
-export async function fetchInventorySummary() {
-  const res = await fetch(`${BASE}/inventory/summary`);
-  if (!res.ok) throw new Error('Failed to fetch inventory summary');
-  return res.json();
-}
-
-export async function addInventoryReel(reel) {
-  const res = await fetch(`${BASE}/inventory`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(reel),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Failed to add reel');
-  return data;
-}
-
-export async function updateInventoryReel(reelId, updates) {
-  const res = await fetch(`${BASE}/inventory/${reelId}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(updates),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Failed to update reel');
-  return data;
-}
-
-export async function deleteInventoryReel(reelId) {
-  const res = await fetch(`${BASE}/inventory/${reelId}`, { method: 'DELETE' });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Failed to delete reel');
-  return data;
-}
