@@ -14,7 +14,9 @@
       "Bash(python -c \":*)",
       "Bash(cmd.exe /c \"node --version 2>&1\")",
       "Bash(source venv/bin/activate)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(./venv/bin/python -c \"from calculator.batch_processor import generate_template; generate_template\\('uploads/_test_template.xlsx'\\); print\\('OK'\\)\")",
+      "PowerShell(pip install *)"
     ]
   }
 }

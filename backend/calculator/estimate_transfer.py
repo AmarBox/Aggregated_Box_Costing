@@ -60,7 +60,7 @@ def _build_program(bottom_w, bottom_q, flute_w, flute_q,
                    top_w, top_q, ups, punching, pins, order_type=None):
     """Build a human-readable program description string."""
     prog = f"{bottom_w}({bottom_q}) + {flute_w}({flute_q}) + {top_w}({top_q})"
-    prog += f" ; Ups = {int(ups)}"
+    prog += f" ; Ups = {_format_num(ups)}"
     if order_type and str(order_type).strip().upper() != 'ALL':
         prog += f" ; {order_type}"
     if str(punching).strip().upper() == 'Y':
@@ -220,7 +220,7 @@ def transfer(raw_work_path, estimates_path):
         top_q      = str(rw_ws.cell(row=row_num, column=RW_TOP_Q).value).strip()
         ply        = int(rw_ws.cell(row=row_num, column=RW_PLY).value)
         order_type = rw_ws.cell(row=row_num, column=RW_ORDER_TYPE).value
-        ups        = int(rw_ws.cell(row=row_num, column=RW_UPS).value)
+        ups        = float(rw_ws.cell(row=row_num, column=RW_UPS).value)
         punching   = rw_ws.cell(row=row_num, column=RW_PUNCHING).value
         pins       = rw_ws.cell(row=row_num, column=RW_PINS).value or 0
         item_name  = rw_ws.cell(row=row_num, column=RW_ITEM_NAME).value
