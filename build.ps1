@@ -79,11 +79,15 @@ CONFIG_REPO_PAT = "$($env:CONFIG_REPO_PAT)"
             --onefile `
             --windowed `
             --name "AggregatedBoxCosting" `
+            --icon "app_icon.ico" `
             --add-data "..\frontend\dist;frontend\dist" `
             --add-data "calculator\app_config.default.json;calculator" `
+            --add-data "app_icon.ico;." `
             --collect-data "pint" `
             --hidden-import "pint" `
             --hidden-import "openpyxl" `
+            --hidden-import "pystray._win32" `
+            --hidden-import "PIL.Image" `
             launcher.py
 
         if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed" }

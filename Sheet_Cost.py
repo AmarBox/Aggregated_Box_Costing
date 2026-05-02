@@ -90,7 +90,7 @@ def lamination_cost (sheet_area, is_laminated = False):
     if not is_laminated:
         return 0
     sheet_area_inches = sheet_area.to(inch**2)
-    lamination_cost = (sheet_area_inches/100) * 0.35 * INR / inch**2
+    lamination_cost = (sheet_area_inches/100) * 0.45 * INR / inch**2
     return lamination_cost
 
 def corrugation_cost (sheet_weight, paper_quality):
@@ -108,7 +108,7 @@ def corrugation_cost (sheet_weight, paper_quality):
     return cost_paper
 
 def corrugation_cost_nf(sheet_weight, paper_quality):
-    nf_corrugation_cost = 10 * INR / kg
+    nf_corrugation_cost = 12 * INR / kg
     cost_paper = 0
     for i in range(len(sheet_weight) - 1):
         cost_paper += sheet_weight[i] * (paper_quality[i].value + nf_corrugation_cost)
@@ -178,13 +178,13 @@ def sales_price (cost):
     return sales_price
 
 def bundling_cost (number_of_boxes):
-    number_bundles = math.ceil(number_of_boxes / 100)
+    number_bundles = math.ceil(number_of_boxes /1000)
 
 
 class PaperQuality_OG(Enum):
-    Kraft = 37.5 * INR / kg
-    Duplex = 50 * INR / kg
-    Golden = 42 * INR / kg
+    Kraft = 34.5 * INR / kg
+    Duplex = 48 * INR / kg
+    Golden = 40 * INR / kg
     PrePrinted = 0 * INR / kg
     Golden180 = 42 * INR / kg
     KraftImported = 75 * INR / kg
@@ -204,16 +204,16 @@ class PaperQuality_Adjusted(Enum):
 
 ###Inputs###
 
-length = 31 # in inches
-width = 41.5 # in inches
+length = 28 # in inches
+width = 18.5 # in inches
 
-paper_weight = [230, 100, 230] # in g/m^2 [Bottom, Flute, Top]
-paper_quality = [PaperQuality_Adjusted.Duplex, PaperQuality_Adjusted.Kraft, PaperQuality_Adjusted.Duplex] #[Bottom, Flute, Top]
+paper_weight = [140, 140, 230] # in g/m^2 [Bottom, Flute, Top]
+paper_quality = [PaperQuality_Adjusted.Kraft, PaperQuality_Adjusted.Kraft, PaperQuality_Adjusted.Duplex] #[Bottom, Flute, Top]
 # paper_quality= [PaperQuality_OG.Golden, PaperQuality_OG.Kraft, PaperQuality_OG.Duplex] #[Bottom, Flute, Top]
 
-ply_num = 3
-box_per_sheet = 2 # Number of boxes that can be made from one sheet
-number_of_boxes = 1500
+ply_num = 5
+box_per_sheet = 1 # Number of boxes that can be made from one sheet
+number_of_boxes = 20000
 number_of_sheets = number_of_boxes/box_per_sheet
 
 is_nf = False # True if NF, False if not
@@ -223,12 +223,12 @@ is_pasting = True # True if pasting, False if not
 is_punching = True # True if punching, False if not
 is_scoring = False # True if scoring, False if not
 
-is_laminated = False # True if laminated, False if not
+is_laminated = True # True if laminated, False if not
 
-is_printed = True # True if printed, False if not
+is_printed = False # True if printed, False if not
 
 is_hand_pasted = False # True if hand pasted, False if not
-pins_per_box = 0 # Number of pins per box
+pins_per_box = 16 # Number of pins per box
 
 only_corrugation = False # True if only liner, False if not
 first_time = False # True if first time, False if not

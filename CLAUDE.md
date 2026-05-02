@@ -104,7 +104,7 @@ python cli.py all Raw_Work.xlsx Estimates.xlsx
 ### Paper Qualities
 - **KRAFT** — GSM: 80, 100, 120, 140
 - **GOLDEN** — GSM: 120, 150, 180. When 180 GSM is selected, GOLDEN180 pricing is used automatically
-- **DUPLEX** — GSM: 200, 230, 285. Supports custom GSM entry in the Top sheet layer
+- **DUPLEX** — GSM: 180, 200, 230, 285. Supports custom GSM entry in the Top sheet layer
 - **ITC** — GSM: 250, 300, 350, 400. Supports custom GSM entry in the Top sheet layer
 - **PREPRINTED** — No weight (top sheet only, cost = 0)
 

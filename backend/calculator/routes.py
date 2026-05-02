@@ -89,7 +89,7 @@ def calculate_cost():
 
         production_details = ProductionDetails(
             ply_num=int(data.get("ply_num", 3)),
-            box_per_sheet=int(data.get("box_per_sheet", 1)),
+            box_per_sheet=float(data.get("box_per_sheet", 1)),
             pins_per_box=pins_per_box,
             number_of_boxes=int(data.get("number_of_boxes", 1000)),
             paper_weight=paper_weight,

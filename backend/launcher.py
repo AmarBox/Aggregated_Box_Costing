@@ -1,9 +1,10 @@
 """
 Entry point for the bundled .exe.
 
-Starts the Flask app on the first available local port, polls until it's
-accepting connections, then opens the user's default browser. Leaving the
-console window open keeps the app running; closing it stops the app.
+Starts the Flask app on the first available local port in a background
+thread, opens the user's default browser once it's ready, and shows a
+system-tray icon with Open / Quit. The app keeps running in the
+background until Quit is selected from the tray menu.
 
 Run from source for testing:
     python launcher.py
@@ -11,12 +12,17 @@ Run from source for testing:
 Bundled via PyInstaller — see build.ps1.
 """
 
+import os
 import socket
 import sys
 import threading
 import time
 import webbrowser
 from contextlib import closing
+from pathlib import Path
+
+import pystray
+from PIL import Image
 
 from app import app
 
@@ -51,11 +57,16 @@ def _wait_until_ready(port: int) -> bool:
     return False
 
 
-def _open_browser_when_ready(port: int) -> None:
-    if _wait_until_ready(port):
-        webbrowser.open(f"http://localhost:{port}/")
+def _icon_path() -> Path:
+    if getattr(sys, "frozen", False):
+        base = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
     else:
-        print(f"[launcher] server did not become ready within {READY_TIMEOUT_SECONDS}s")
+        base = Path(__file__).parent
+    return base / "app_icon.ico"
+
+
+def _load_tray_image() -> Image.Image:
+    return Image.open(_icon_path())
 
 
 def main() -> None:
@@ -63,22 +74,40 @@ def main() -> None:
         port = _find_open_port()
     except RuntimeError as e:
         print(f"[launcher] {e}")
-        input("Press Enter to exit...")
         sys.exit(1)
 
-    print("=" * 60)
-    print(f"  {APP_NAME}")
-    print("=" * 60)
-    print(f"  Open in browser:  http://localhost:{port}/")
-    print(f"  Stop the app:     close this window")
-    print("=" * 60)
+    url = f"http://localhost:{port}/"
 
     threading.Thread(
-        target=_open_browser_when_ready, args=(port,), daemon=True
+        target=lambda: app.run(
+            host="127.0.0.1", port=port, debug=False, use_reloader=False
+        ),
+        daemon=True,
     ).start()
 
-    # Production-friendly: no debug, no reloader, listen only on localhost.
-    app.run(host="127.0.0.1", port=port, debug=False, use_reloader=False)
+    def _open_when_ready():
+        if _wait_until_ready(port):
+            webbrowser.open(url)
+
+    threading.Thread(target=_open_when_ready, daemon=True).start()
+
+    def on_open(icon, item):
+        webbrowser.open(url)
+
+    def on_quit(icon, item):
+        icon.stop()
+        os._exit(0)
+
+    icon = pystray.Icon(
+        "AggregatedBoxCosting",
+        _load_tray_image(),
+        APP_NAME,
+        menu=pystray.Menu(
+            pystray.MenuItem("Open", on_open, default=True),
+            pystray.MenuItem("Quit", on_quit),
+        ),
+    )
+    icon.run()
 
 
 if __name__ == "__main__":

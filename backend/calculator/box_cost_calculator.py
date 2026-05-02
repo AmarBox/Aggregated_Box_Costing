@@ -96,7 +96,7 @@ class ManufacturingOptions:
 class ProductionDetails:
     """Data class to hold production details."""
     ply_num: int = 3
-    box_per_sheet: int = 1
+    box_per_sheet: float = 1
     pins_per_box: int = 6
     number_of_boxes: int = 1000
     paper_weight: List[float] = None  # [bottom, flute, top] in g/m²

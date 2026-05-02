@@ -16,7 +16,14 @@
       "Bash(source venv/bin/activate)",
       "Bash(python:*)",
       "Bash(./venv/bin/python -c \"from calculator.batch_processor import generate_template; generate_template\\('uploads/_test_template.xlsx'\\); print\\('OK'\\)\")",
-      "PowerShell(pip install *)"
+      "PowerShell(pip install *)",
+      "Bash(\"C:/Projects/Costing Apps/Aggregated_Box_Costing/backend/venv/bin/python\" -c \"import sys; print\\(sys.executable\\)\")",
+      "Bash(where python *)",
+      "PowerShell(& \"C:\\\\Projects\\\\Costing Apps\\\\Aggregated_Box_Costing\\\\build.ps1\" 2>&1 | Out-String)",
+      "Bash(C:/Projects/Costing Apps/Aggregated_Box_Costing/backend/dist/AggregatedBoxCosting.exe *)",
+      "PowerShell(Stop-Process *)",
+      "Bash(taskkill //F //IM python.exe)",
+      "PowerShell(Get-NetTCPConnection *)"
     ]
   }
 }

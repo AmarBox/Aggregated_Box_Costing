@@ -22,7 +22,8 @@ export default function ProductionDetailsStep({ formData, updateField }) {
             type="number"
             value={formData.box_per_sheet}
             onChange={(e) => updateField('box_per_sheet', Number(e.target.value))}
-            min="1"
+            min="0.01"
+            step="any"
           />
         </div>
         <div className="form-group">

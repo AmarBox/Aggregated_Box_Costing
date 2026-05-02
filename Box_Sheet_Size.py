@@ -18,15 +18,15 @@ def convert_to_inches(length, width, height, units):
     Returns:
         float: The value in inches.
     """
-    length = length * units
-    width = width * units
+    newlength = max(length,width) * units
+    newwidth = min(length,width) * units
     height = height * units
     # Convert dimensions to the same unit (inch in this case)
     if not units == inch:
-        length = length.to(inch)
-        width = width.to(inch)
-        height = height.to(inch)
-    return length, width, height
+        newlength = (math.ceil(newlength.to(inch).magnitude*16)/16) *inch
+        newwidth = (math.ceil(newwidth.to(inch).magnitude*16)/16) *inch
+        height = (math.ceil(height.to(inch).magnitude*16)/16) *inch
+    return newlength, newwidth, height
 
 def calculate_sheet_size(length, width, height, boxtype, units):
     """
@@ -78,15 +78,18 @@ class BoxType(Enum):
 
 if __name__ == "__main__":
     # Input dimensions for the box
-    length = 195
-    width = 195
-    height = 255
-    # boxtype = BoxType.Universal
-    units = mm
+    length = 4
+    width = 4
+    height = 6.5
+    boxtype = BoxType.Bottom_Locking
+    units = inch
 
     # Convert dimensions to inches
     length, width, height = convert_to_inches(length, width, height, units)
-    
+    print(f"Length = {length}")
+    print(f"Width = {width}")
+    print(f"Height = {height}")
+
     # sheet_size = calculate_sheet_size(length, width, height, boxtype, units)
 
     # print(f"Sheet size required for the box: {sheet_size[0]} x {sheet_size[1]}")
