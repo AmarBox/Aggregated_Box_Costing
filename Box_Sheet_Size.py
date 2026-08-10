@@ -78,10 +78,10 @@ class BoxType(Enum):
 
 if __name__ == "__main__":
     # Input dimensions for the box
-    length = 4
-    width = 4
-    height = 6.5
-    boxtype = BoxType.Bottom_Locking
+    length = 10
+    width = 8
+    height = 5
+    boxtype = BoxType.Ring_Flap
     units = inch
 
     # Convert dimensions to inches
