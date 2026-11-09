@@ -44,13 +44,19 @@ def calculate_sheet_size(length, width, height, boxtype, units):
     if boxtype == BoxType.Universal:
         # Universal box type calculation
         sheet_width = (height + width) + 1*inch
-        sheet_length = 2 * (length + width ) + 1.5*inch
+        sheet_length = 2*(length + width ) + 1.5*inch
 
     elif boxtype == BoxType.Bottom_Locking:
         # Bottom locking box type calculation
-        sheet_length = height + 1.5 * width + 2*inch
-        sheet_width = 2 * (length + width) + 1*inch
-    
+        sheet_length = 2 * (length + width) + 1*inch 
+        sheet_width = height + 1.5*width + 2*inch
+
+    elif boxtype == BoxType.Bottom_Locking_2Up:
+        # Bottom locking 2-up box type calculation
+        sheet_length = 2 * (length + width) + 1*inch
+        sheet_width = 2*height + 2*width + 3*inch
+
+
     elif boxtype == BoxType.Mobile_Type:
         # Mobile type box calculation
         sheet_length = 4 * height + length + 1*inch    
@@ -58,7 +64,7 @@ def calculate_sheet_size(length, width, height, boxtype, units):
     
     elif boxtype == BoxType.Ring_Flap:
         # Ring flap box calculation
-        sheet_length = max ( 2 * (height.magnitude + width.magnitude) + 2,     2 * width.magnitude + length.magnitude + 2) * inch
+        sheet_length = max (2 * (height.magnitude + width.magnitude) + 2, 2 * width.magnitude + length.magnitude + 2) * inch
         sheet_width = height + length + 2.5*inch 
 
     sheet_length = math.ceil(sheet_length.magnitude) * inch
@@ -73,15 +79,16 @@ class BoxType(Enum):
     """
     Universal = 1
     Bottom_Locking = 2
-    Mobile_Type = 3,
-    Ring_Flap = 4
+    Bottom_Locking_2Up = 3
+    Mobile_Type = 4
+    Ring_Flap = 5
 
 if __name__ == "__main__":
     # Input dimensions for the box
-    length = 4
-    width = 4
-    height = 6.5
-    boxtype = BoxType.Bottom_Locking
+    length = 16.5
+    width = 8
+    height = 16.5
+    # boxtype = BoxType.Bottom_Locking
     units = inch
 
     # Convert dimensions to inches
@@ -98,6 +105,4 @@ if __name__ == "__main__":
     for boxtype in BoxType:
         sheet_size = calculate_sheet_size(length, width, height, boxtype, units)
         print({boxtype})
-        if boxtype == BoxType.Bottom_Locking:
-            print("2 Up Locking Sheet Size = ", math.ceil((2 * sheet_size[0] - (width/2 - 1 * inch)).magnitude), "x", math.ceil(((2 * sheet_size[1]) - (length + width)).magnitude), "inches")
         print(f"Sheet size required for the box: {sheet_size[0]} x {sheet_size[1]}")

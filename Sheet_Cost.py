@@ -152,14 +152,14 @@ def sheet_manufacturing_cost (sheet_weight, paper_quality, sheet_area, number_of
 def pinning_cost (number_of_pins):
     return number_of_pins * 0.15 * INR
 
-def hand_pasting (length, is_hand_pasted = False):
+def hand_pasting (width, boxes_per_sheet, is_hand_pasted = False):
     if not is_hand_pasted:
         return 0
-    if length <= 10:
+    if width/boxes_per_sheet <= 10:
         hand_pasting_cost = 0.3 * INR
-    elif length <= 20:
+    elif width/boxes_per_sheet <= 20:
         hand_pasting_cost = 0.4 * INR
-    elif length <= 30:
+    elif width/boxes_per_sheet <= 30:
         hand_pasting_cost = 1 * INR 
     else:
         hand_pasting_cost = 2 * INR
@@ -182,11 +182,11 @@ def bundling_cost (number_of_boxes):
 
 
 class PaperQuality_OG(Enum):
-    Kraft = 34.5 * INR / kg
-    Duplex = 48 * INR / kg
-    Golden = 40 * INR / kg
+    Kraft = 42 * INR / kg
+    Duplex = 52 * INR / kg
+    Golden = 50 * INR / kg
     PrePrinted = 0 * INR / kg
-    Golden180 = 42 * INR / kg
+    Golden180 = 54 * INR / kg
     KraftImported = 75 * INR / kg
     ITCWhite = 70 * INR / kg
 
@@ -204,16 +204,16 @@ class PaperQuality_Adjusted(Enum):
 
 ###Inputs###
 
-length = 28 # in inches
-width = 18.5 # in inches
+length = 18 # in inches
+width = 16 # in inches
 
-paper_weight = [140, 140, 230] # in g/m^2 [Bottom, Flute, Top]
-paper_quality = [PaperQuality_Adjusted.Kraft, PaperQuality_Adjusted.Kraft, PaperQuality_Adjusted.Duplex] #[Bottom, Flute, Top]
+paper_weight = [100, 100, 0] # in g/m^2 [Bottom, Flute, Top]
+paper_quality = [PaperQuality_Adjusted.Kraft, PaperQuality_Adjusted.Kraft, PaperQuality_Adjusted.PrePrinted] #[Bottom, Flute, Top]
 # paper_quality= [PaperQuality_OG.Golden, PaperQuality_OG.Kraft, PaperQuality_OG.Duplex] #[Bottom, Flute, Top]
 
-ply_num = 5
-box_per_sheet = 1 # Number of boxes that can be made from one sheet
-number_of_boxes = 20000
+ply_num = 3
+box_per_sheet = 2
+number_of_boxes = 10000
 number_of_sheets = number_of_boxes/box_per_sheet
 
 is_nf = False # True if NF, False if not
@@ -223,12 +223,12 @@ is_pasting = True # True if pasting, False if not
 is_punching = True # True if punching, False if not
 is_scoring = False # True if scoring, False if not
 
-is_laminated = True # True if laminated, False if not
+is_laminated = False # True if laminated, False if not
 
 is_printed = False # True if printed, False if not
 
-is_hand_pasted = False # True if hand pasted, False if not
-pins_per_box = 16 # Number of pins per box
+is_hand_pasted = True # True if hand pasted, False if not
+pins_per_box = 0 # Number of pins per box
 
 only_corrugation = False # True if only liner, False if not
 first_time = False # True if first time, False if not
@@ -242,7 +242,7 @@ sheet_area = sheet_area_inches (length, width)
 print(f"Sheet Size: {sheet_area}")
 
 if only_corrugation:
-    corrugation_cost = 7 * INR / kg
+    corrugation_cost = 8 * INR / kg
     backing_weight = paper_weight[0] * g/m**2
     fluting_weight = 1.5*paper_weight[1] * g/m**2
     top_weight  = paper_weight[2] * g/m**2
@@ -263,7 +263,7 @@ if only_corrugation:
     
     cost_per_box = sheet_manufacturing_cost / box_per_sheet
 
-    cost_per_box = cost_per_box + pinning_cost(pins_per_box) + hand_pasting(length, is_hand_pasted)
+    cost_per_box = cost_per_box + pinning_cost(pins_per_box) + hand_pasting(width, box_per_sheet, is_hand_pasted)
 
     print(f"Cost per box: {cost_per_box}")
     sales_price = sales_price(cost_per_box)
@@ -302,15 +302,11 @@ else:
     print(f"Printing Cost: {printing_cost(sheet_area, number_of_sheets, is_printed)}")
     print(f"Punching Cost: {punching_cost(number_of_sheets, is_punching)}")
     print(f"Lamination Cost: {lamination_cost(sheet_area, is_laminated)}")
-    print(f"Hand Pasting Cost: {hand_pasting(length, is_hand_pasted)}")
+    print(f"Hand Pasting Cost: {hand_pasting(width, box_per_sheet, is_hand_pasted)}")
     print(f"Pinning Cost: {pinning_cost(pins_per_box)}")
-
-    cost_paper = 0
-    for i in range(len(sheet_weight)):
-        cost_paper += sheet_weight[i] * (paper_quality[i].value) 
      
-    print(f"Cost of Paper: {cost_paper}")    
-    manufacturing_cost = sheet_manufacturing_cost/box_per_sheet + pinning_cost(pins_per_box) + hand_pasting(length, is_hand_pasted) + (transportation_cost/number_of_boxes)
+    # print(f"Cost of Paper: {cost_paper}")    
+    manufacturing_cost = sheet_manufacturing_cost/box_per_sheet + pinning_cost(pins_per_box) + hand_pasting(width, box_per_sheet, is_hand_pasted) + (transportation_cost/number_of_boxes)
     print(f"Transport Cost per box: {transportation_cost/number_of_boxes}")
     print(f"Manufacturing Cost: {manufacturing_cost}")
 
