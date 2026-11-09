@@ -220,7 +220,7 @@ is_nf = False # True if NF, False if not
 
 is_pasting = True # True if pasting, False if not
 
-is_punching = True # True if punching, False if not
+is_punching = False # True if punching, False if not
 is_scoring = False # True if scoring, False if not
 
 is_laminated = False # True if laminated, False if not

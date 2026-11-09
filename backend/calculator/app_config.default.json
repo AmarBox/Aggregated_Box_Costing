@@ -13,7 +13,12 @@
       "PREPRINTED": 0
     },
     "monthly": {
-      "2026-03": { "KRAFT": 37, "DUPLEX": 50, "GOLDEN": 41, "GOLDEN180": 44.5, "ITC": 70, "PREPRINTED": 0 },
+      "2026-08": { "KRAFT": 37, "DUPLEX": 50, "GOLDEN": 41, "GOLDEN180": 44.5, "ITC": 70, "PREPRINTED": 0 },    
+      "2026-07": { "KRAFT": 37, "DUPLEX": 49, "GOLDEN": 41, "GOLDEN180": 44.5, "ITC": 70, "PREPRINTED": 0 },    
+      "2026-06": { "KRAFT": 36, "DUPLEX": 48, "GOLDEN": 40, "GOLDEN180": 44.5, "ITC": 70, "PREPRINTED": 0 },    
+      "2026-05": { "KRAFT": 35, "DUPLEX": 48, "GOLDEN": 39, "GOLDEN180": 44.5, "ITC": 70, "PREPRINTED": 0 },    
+      "2026-04": { "KRAFT": 36, "DUPLEX": 48, "GOLDEN": 38, "GOLDEN180": 44.5, "ITC": 70, "PREPRINTED": 0 },      
+      "2026-03": { "KRAFT": 37, "DUPLEX": 47, "GOLDEN": 41, "GOLDEN180": 44.5, "ITC": 70, "PREPRINTED": 0 },
       "2026-02": { "KRAFT": 36, "DUPLEX": 47, "GOLDEN": 38, "GOLDEN180": 42.5, "ITC": 70, "PREPRINTED": 0 },
       "2026-01": { "KRAFT": 36, "DUPLEX": 47, "GOLDEN": 38, "GOLDEN180": 40,   "ITC": 70, "PREPRINTED": 0 },
       "2025-12": { "KRAFT": 35, "DUPLEX": 46, "GOLDEN": 37, "GOLDEN180": 39.5, "ITC": 70, "PREPRINTED": 0 },
